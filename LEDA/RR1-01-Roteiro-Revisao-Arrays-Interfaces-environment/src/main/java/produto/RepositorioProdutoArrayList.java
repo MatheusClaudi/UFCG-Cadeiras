@@ -40,8 +40,9 @@ public class RepositorioProdutoArrayList {
 	 * @return
 	 */
 	private int procurarIndice(int codigo) {
-		// TODO Implement your code here
-		throw new UnsupportedOperationException("Not implemented yet!");
+	 	
+		Produto produto = new Produto(codigo, null, 0, null);
+		return this.produtos.indexOf(produto);
 	}
 
 	/**
@@ -51,16 +52,23 @@ public class RepositorioProdutoArrayList {
 	 * @return
 	 */
 	public boolean existe(int codigo) {
-		// TODO Implement your code here
-		throw new UnsupportedOperationException("Not implemented yet!");
+	
+		boolean saida = true;
+		
+		if (procurarIndice(codigo) == -1) {
+	
+			saida = false;
+		}
+		
+		return saida;
 	}
 
 	/**
 	 * Insere um novo produto (sem se preocupar com duplicatas)
 	 */
 	public void inserir(Produto produto) {
-		// TODO Implement your code here
-		throw new UnsupportedOperationException("Not implemented yet!");
+		
+		this.produtos.add(produto);
 	}
 
 	/**
@@ -69,8 +77,16 @@ public class RepositorioProdutoArrayList {
 	 * utilizado.
 	 */
 	public void atualizar(Produto produto) {
-		// TODO Implement your code here
-		throw new UnsupportedOperationException("Not implemented yet!");
+		
+		int indice = this.procurarIndice(produto.getCodigo());
+		
+		if (indice == -1) {
+			throw new RuntimeException("produto não cadastrado");
+		}
+		else {
+			this.produtos.remove(indice);
+			this.produtos.add(produto);
+		}
 	}
 
 	/**
@@ -81,8 +97,16 @@ public class RepositorioProdutoArrayList {
 	 * @param codigo
 	 */
 	public void remover(int codigo) {
-		// TODO Implement your code here
-		throw new UnsupportedOperationException("Not implemented yet!");
+		
+		int indice = this.procurarIndice(codigo);
+		
+		if (indice == -1) {
+			throw new RuntimeException("produto não cadastrado");
+		}
+		else {
+			
+			this.produtos.remove(indice);
+		}
 	}
 
 	/**
@@ -93,7 +117,18 @@ public class RepositorioProdutoArrayList {
 	 * @return
 	 */
 	public Produto procurar(int codigo) {
-		// TODO Implement your code here
-		throw new UnsupportedOperationException("Not implemented yet!");
+		
+		Produto resp = null;
+        int indice = this.procurarIndice(codigo);
+		
+		if (indice == -1) {
+			throw new RuntimeException("produto não cadastrado");
+		}
+		else {
+			
+			resp = (Produto) this.produtos.get(indice);
+		}
+		
+		return resp;
 	}
 }
