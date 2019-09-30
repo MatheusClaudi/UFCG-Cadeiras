@@ -1,7 +1,10 @@
 package adt.hashtable.closed;
 
+import java.util.LinkedList;
+
 import adt.hashtable.hashfunction.HashFunction;
 import adt.hashtable.hashfunction.HashFunctionClosedAddressMethod;
+import adt.hashtable.hashfunction.HashFunctionDivisionMethod;
 import adt.hashtable.hashfunction.HashFunctionFactory;
 
 public class HashtableClosedAddressImpl<T> extends
@@ -53,26 +56,76 @@ public class HashtableClosedAddressImpl<T> extends
 	 * prime.
 	 */
 	int getPrimeAbove(int number) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Not implemented yet!");
+		
+		int n = number + 1;
+		
+		while(!util.Util.isPrime(n)) {
+			
+			n++;
+		}
+		
+		return n;
 	}
 
 	@Override
 	public void insert(T element) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Not implemented yet!");
+		
+		int hash = ((HashFunctionDivisionMethod) this.hashFunction).hash(element);
+		
+		LinkedList<T> listaPos = ((LinkedList<T>) this.table[hash]);
+		
+		if (listaPos == null) {
+			
+			listaPos = new LinkedList<T>();
+			listaPos.add(element);
+			
+			this.table[hash] = listaPos;
+			this.elements++;
+		}else {
+			
+			listaPos.add(element);
+			this.table[hash] = listaPos;
+			this.COLLISIONS++;
+			this.elements++;
+		}
 	}
 
 	@Override
 	public void remove(T element) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Not implemented yet!");
+		
+		int hash = ((HashFunctionDivisionMethod) this.hashFunction).hash(element);
+		
+		LinkedList<T> listaPos = ((LinkedList<T>) this.table[hash]);
+		
+		for (int i = 0; i < listaPos.size(); i++) {
+			
+			if (element.equals(listaPos.get(i))) {
+				
+				listaPos.remove(i);
+				this.table[hash] = listaPos;
+				break;
+			}
+		}
 	}
 
 	@Override
 	public T search(T element) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Not implemented yet!");
+		
+		int hash = ((HashFunctionDivisionMethod) this.hashFunction).hash(element);
+		
+		T retorno = null;
+		
+		LinkedList<T> listaPos = ((LinkedList<T>) this.table[hash]);
+		
+		for (int i = 0; i < listaPos.size(); i++) {
+			
+			if (element.equals(listaPos.get(i))) {
+				
+				retorno = listaPos.get(i);				
+			}
+		}
+		
+		return retorno;
 	}
 
 	@Override
