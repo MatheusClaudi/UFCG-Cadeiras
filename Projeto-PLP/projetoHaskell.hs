@@ -8,7 +8,9 @@ type NomeNota = String
 type Considerar = Bool
 data Nota = Nota Peso Pontos NomeNota Considerar
                                                    deriving (Show, Read)
+                  
 
+type Disciplinas = [Disciplina]                                                   
 type NomeDisciplina = String
 type Sala = String
 type Professor = String
@@ -16,6 +18,7 @@ type Notas = [Nota]
 data Disciplina = Disciplina NomeDisciplina Sala Professor Notas
                                                                    deriving (Show, Read)
 
+type Compromissos = [Compromisso]                                                                   
 data Compromisso = Compromisso
                                  deriving (Show, Read)
 
@@ -41,7 +44,7 @@ a4 = do
 
 
 
-changeMainScreen :: [Disciplina] -> [Compromisso] -> Integer -> IO()
+changeMainScreen :: Disciplinas -> Compromissos -> Integer -> IO()
 changeMainScreen disciplinas compromissos cursor | cursor == 0 = do a1;
                                                  | cursor == 1 = do a2;                
                                                  | cursor == 2 = do configuracoesScreen disciplinas compromissos 0 
@@ -54,7 +57,7 @@ optionsMainScreen = [" Disciplinas", " Compromissos", " Configuracoes", " Tutori
 optionsConfiguracoesScreen :: [String]
 optionsConfiguracoesScreen = [" Cadastrar disciplina", " Atualizar disciplina", " Remover disciplina", " Resetar sistema"]
 
-doMainScreen :: [Disciplina] -> [Compromisso] -> Integer -> [Char] -> IO()
+doMainScreen :: Disciplinas -> Compromissos -> Integer -> [Char] -> IO()
 doMainScreen disciplinas compromissos cursor action | action == "\ESC[B" = mainScreen disciplinas compromissos ((cursor+1) `mod` 4)
                                                     | action == "\ESC[A" && cursor /= 0 = mainScreen disciplinas compromissos (cursor-1)
                                                     | action == "\ESC[A" && cursor == 0 = mainScreen disciplinas compromissos 3
@@ -73,7 +76,7 @@ showSimpleScreen (o:os) cursor contador = do
    showSimpleScreen os cursor (contador+1)
 
 
-mainScreen :: [Disciplina] -> [Compromisso] -> Integer -> IO ()
+mainScreen :: Disciplinas -> Compromissos -> Integer -> IO ()
 mainScreen disciplinas compromissos cursor = do
    
    system "clear"
@@ -93,11 +96,11 @@ endRun = do
    system "clear"
    putStr ""
 
-doExitScreen :: [Disciplina] -> [Compromisso] -> String -> IO ()
+doExitScreen :: Disciplinas -> Compromissos -> String -> IO ()
 doExitScreen disciplinas compromissos action | action == "s" = endRun
                                              | otherwise = mainScreen disciplinas compromissos 0
     
-exitScreen :: [Disciplina] -> [Compromisso] -> IO ()
+exitScreen :: Disciplinas -> Compromissos -> IO ()
 exitScreen disciplinas compromissos = do
    system "clear"
    putStrLn("Digite (s) para encerrar a execucao ou (Outra tecla) para voltar para o menu");
@@ -113,7 +116,7 @@ changeConfiguracoesScreen 1 = do a2
 changeConfiguracoesScreen 2 = do a2
 changeConfiguracoesScreen 3 = do a4
 
-doConfiguracoesScreen :: [Disciplina] -> [Compromisso] -> Integer -> [Char] -> IO()
+doConfiguracoesScreen :: Disciplinas -> Compromissos -> Integer -> [Char] -> IO()
 doConfiguracoesScreen disciplinas compromissos cursor action | action == "\ESC[B" = configuracoesScreen disciplinas compromissos ((cursor+1) `mod` 4)
                                                     | action == "\ESC[A" && cursor /= 0 = configuracoesScreen disciplinas compromissos (cursor-1)
                                                     | action == "\ESC[A" && cursor == 0 = configuracoesScreen disciplinas compromissos 3
@@ -122,7 +125,7 @@ doConfiguracoesScreen disciplinas compromissos cursor action | action == "\ESC[B
                                                     | otherwise = configuracoesScreen disciplinas compromissos cursor
 
 
-configuracoesScreen :: [Disciplina] -> [Compromisso] -> Integer -> IO ()
+configuracoesScreen :: Disciplinas -> Compromissos -> Integer -> IO ()
 configuracoesScreen disciplinas compromissos cursor = do
    
    system "clear"
@@ -133,7 +136,10 @@ configuracoesScreen disciplinas compromissos cursor = do
    action <- getKey
    doConfiguracoesScreen disciplinas compromissos cursor action
 
+run :: IO ()
+run = do
+   mainScreen [] [] 0
 
 main :: IO ()
 main = do
-   mainScreen [] [] 0
+   run
