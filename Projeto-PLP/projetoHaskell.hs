@@ -1,4 +1,6 @@
 import System.IO 
+import Control.Exception
+import System.IO.Error 
 import System.Process
 import Control.Monad (when)
 
@@ -18,9 +20,14 @@ type Notas = [Nota]
 data Disciplina = Disciplina NomeDisciplina Sala Professor Notas
                                                                    deriving (Show, Read)
 
-type Compromissos = [Compromisso]                                                                   
-data Compromisso = Compromisso
-                                 deriving (Show, Read)
+type Compromissos = [Compromisso]       
+type Titulo = String
+type Detalhe = String
+type Prioridade = String
+type Status = String                                                            
+data Compromisso = Compromisso Titulo Detalhe Prioridade Status
+                                                                   deriving (Show, Read)
+
 
 getKey :: IO [Char]
 getKey = reverse <$> getKey' ""
@@ -45,8 +52,8 @@ a4 = do
 
 
 changeMainScreen :: Disciplinas -> Compromissos -> Integer -> IO()
-changeMainScreen disciplinas compromissos cursor | cursor == 0 = do a1;
-                                                 | cursor == 1 = do a2;                
+changeMainScreen disciplinas compromissos cursor | cursor == 0 = do disciplinasScreen disciplinas compromissos 0 
+                                                 | cursor == 1 = do a2            
                                                  | cursor == 2 = do configuracoesScreen disciplinas compromissos 0 
                                                  | cursor == 3 = do a4
 
@@ -75,6 +82,15 @@ showSimpleScreen (o:os) cursor contador = do
       putStrLn("  " ++ o)
    showSimpleScreen os cursor (contador+1)
 
+showDisciplinasScreen :: [Disciplina] -> Integer -> Integer -> IO()
+showDisciplinasScreen [] cursor contador = return ()
+showDisciplinasScreen ((Disciplina a b c d):os) cursor contador = do
+   if contador == cursor
+      then 
+      putStrLn("->" ++ (show a))
+   else
+      putStrLn("  " ++ (show a))
+   showDisciplinasScreen os cursor (contador+1)
 
 mainScreen :: Disciplinas -> Compromissos -> Integer -> IO ()
 mainScreen disciplinas compromissos cursor = do
@@ -136,10 +152,112 @@ configuracoesScreen disciplinas compromissos cursor = do
    action <- getKey
    doConfiguracoesScreen disciplinas compromissos cursor action
 
+doDisciplinasScreen :: Disciplinas -> Compromissos -> Integer -> [Char] -> IO()
+doDisciplinasScreen disciplinas compromissos cursor action | action == "\ESC[B" = disciplinasScreen disciplinas compromissos ((cursor+1) `mod` toInteger(length disciplinas))
+                                                            | action == "\ESC[A" && cursor /= 0 = disciplinasScreen disciplinas compromissos (cursor-1)
+                                                            | action == "\ESC[A" && cursor == 0 = disciplinasScreen disciplinas compromissos (toInteger(length disciplinas) -1)
+                                                            | action == "\ESC[C" = disciplinaScreen disciplinas compromissos (disciplinas !! fromInteger(cursor)) 0 0
+                                                            | action == "\ESC[D" = mainScreen disciplinas compromissos 0
+                                                            | otherwise = disciplinasScreen disciplinas compromissos cursor
+
+disciplinasScreen :: Disciplinas -> Compromissos -> Integer -> IO ()
+disciplinasScreen disciplinas compromissos cursor = do
+   
+   system "clear"
+   showDisciplinasScreen disciplinas cursor 0
+  
+   hSetBuffering stdin NoBuffering
+   hSetEcho stdin False
+   action <- getKey
+   doDisciplinasScreen disciplinas compromissos cursor action
+
+showNotaCursor :: Nota -> Integer -> IO ()
+showNotaCursor (Nota peso pontos nomeNota considerar) cursory = do 
+   if (cursory == 0) then 
+      putStrLn ("->" ++ nomeNota ++ " -   " ++ show(pontos) ++ " -   " ++ show(peso) ++ " % -   " ++ show(considerar))
+   else if (cursory == 1) then
+      putStrLn ("  " ++ nomeNota ++ " - ->" ++ show(pontos) ++ " -   " ++ show(peso) ++ " % -   " ++ show(considerar))
+   else if (cursory == 2) then
+      putStrLn ("  " ++ nomeNota ++ " -   " ++ show(pontos) ++ " - ->" ++ show(peso) ++ " % -   " ++ show(considerar))
+   else  
+      putStrLn ("  " ++ nomeNota ++ " -   " ++ show(pontos) ++ " -   " ++ show(peso) ++ " % - ->" ++ show(considerar))
+
+
+showNotaSemCursor :: Nota -> IO()
+showNotaSemCursor (Nota peso pontos nomeNota considerar) = do
+   putStrLn ("  " ++ nomeNota ++ " -   " ++ show(pontos) ++ " -   " ++ show(peso) ++ " % -   " ++ show(considerar))
+
+showNotasScreen :: Notas -> Integer -> Integer -> Integer -> IO()
+showNotasScreen [] _ _ _ = return ()
+showNotasScreen (o:os) cursorx cursory contadorx = do
+   if (contadorx == cursorx) then 
+      showNotaCursor o cursory
+   else
+      showNotaSemCursor o
+   showNotasScreen os cursorx cursory (contadorx+1)
+   
+showDisciplinaScreen :: Disciplina -> Integer -> Integer -> IO ()
+showDisciplinaScreen (Disciplina a b c d) cursorx cursory = do
+   putStrLn ("Disciplina: " ++ a)
+   putStrLn ("Sala: " ++ b ++ " | Professor: " ++ c)
+   putStrLn ("Avaliacao - nota - peso -|- Usar dado:")
+   
+   putStrLn("")
+   
+   showNotasScreen d cursorx cursory 0 
+
+   
+disciplinaScreen :: Disciplinas -> Compromissos -> Disciplina -> Integer -> Integer -> IO ()
+disciplinaScreen disciplinas compromissos disciplina cursorx cursory = do
+   
+   system "clear"
+   showDisciplinaScreen disciplina cursorx cursory 
+   hSetBuffering stdin NoBuffering
+   hSetEcho stdin False
+   action <- getKey
+
+   putStrLn ("")
+
+   
+   
+
 run :: IO ()
 run = do
-   mainScreen [] [] 0
+   {catch (iniciar) error;}
+   where
+      iniciar = do
+      {
+         arq <- openFile "Arquivos/Disciplinas.txt" ReadMode;
+         dados <- hGetLine arq;
+         hClose arq;
+
+         arq2 <- openFile "Arquivos/Compromissos.txt" ReadMode;
+         dados2 <- hGetLine arq2;
+         hClose arq2;
+
+         mainScreen (read dados) (read dados2) 0;
+         return ()
+      }
+      error = ioError 
+
+te1 :: Disciplina
+te1 = (Disciplina "dd" "gg" "uu" [(Nota 0.33 0 "ii" True), (Nota 0.33 0 "ii" True), (Nota 0 0.33 "ii" True)])
+
+te2 :: Disciplina
+te2 = (Disciplina "dd1" "gg" "uu" [(Nota 0 0 "ii" True)])
+
+te3 :: Disciplina
+te3 = (Disciplina "dd2" "gg" "uu" [(Nota 0 0 "ii" True)])
+
+
+put :: IO ()
+put = do 
+   arq <- openFile "Arquivos/Disciplinas.txt" WriteMode
+   hPutStrLn arq (show[te1, te2, te3])
+   hClose arq
 
 main :: IO ()
 main = do
+
+   put
    run
