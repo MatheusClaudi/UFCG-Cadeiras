@@ -51,7 +51,7 @@ switch([O|Os], Item, Pos, Cont, NewO) :-
 remove([], _, _, []).
 remove([O|Os], Pos, Cont, NewO) :-
     (Pos =:= Cont -> NewO = Os;
-     Cont2 is Cont1 + 1, remove(O, Pos, Cont2, NewO2), NewO = [O|NewO2]).
+     Cont2 is Cont + 1, remove(Os, Pos, Cont2, NewO2), NewO = [O|NewO2]).
 
 add([], Item, NewO) :-
     NewO = Item.
@@ -98,14 +98,21 @@ getString(FinalInput, Mensagem) :-
 getDouble(FinalInput, Mensagem) :-
     write("\n"),
     writeln(Mensagem),
-    read(Return),
-    FinalInput = Return.
+    read_line_to_codes(user_input, Entrada), atom_string(Entrada, Return),
+    (number_string(Number, Return), Number >= 0 -> FinalInput = Number;
+     getDouble(F2, "Entrada invalida digite novamente"), FinalInput is F2).
+
+getDouble10(FinalInput, Mensagem) :-
+    getDouble(F, Mensagem),
+    (F >= 0, F =< 10 -> FinalInput is F;
+     getDouble(F2, "Entrada invalida digite novamente"), FinalInput is F2).
 
 getInt(FinalInput, Mensagem) :-
     write("\n"),
     writeln(Mensagem),
-    read(Return),
-    FinalInput = Return.
+    read_line_to_codes(user_input, Entrada), atom_string(Entrada, Return),
+    (number_string(Number, Return), Number >= 0 -> FinalInput = Number;
+     getDouble(F2, "Entrada invalida digite novamente"), FinalInput is F2).
 
 /*-- funcoes de entrada de dados*/
 
@@ -115,15 +122,13 @@ optionsMainScreen([" Disciplinas", " Compromissos", " Configuracoes", " Tutorial
 doMainScreen(ListaCompromissos, ListaDisciplinas, Cursor, Action) :-
     (up(Action) -> upAction(Cursor, 3, NewCursor), mainScreen(ListaCompromissos, ListaDisciplinas, NewCursor);
      down(Action) -> downAction(Cursor, 3, NewCursor), mainScreen(ListaCompromissos, ListaDisciplinas, NewCursor);
-     left(Action) -> remotionExitAction("Caso deseje encerrar a execucao pressione a tecla (e)", Resultado), 
-     (Resultado =:= 1 -> shell(clear), writeln("Ate mais ver"), get_single_char(NotUsed), killRunning(ListaCompromissos, ListaDisciplinas);
-        mainScreen(ListaCompNromissos, ListaDisciplinas, Cursor));
+     left(Action) -> shell(clear), writeln("Ate mais ver"), get_single_char(NotUsed), killRunning(ListaCompromissos, ListaDisciplinas);
      right(Action) -> (Cursor =:= 0 -> acessoDisciplinasScreen(ListaCompromissos, ListaDisciplinas, 0);
                        Cursor =:= 1 -> acessoCompromissosScreen(ListaCompromissos, ListaDisciplinas, 0);
                        Cursor =:= 2 -> configuracoesScreen(ListaCompromissos, ListaDisciplinas, 0);
                        Cursor =:= 3 -> tutorialScreen(ListaCompromissos, ListaDisciplinas);
                        mainScreen(ListaCompromissos, ListaDisciplinas, Cursor));
-     mainScreen(ListaCompNromissos, ListaDisciplinas, Cursor)).
+     mainScreen(ListaCompromissos, ListaDisciplinas, Cursor)).
 
 mainScreen(ListaCompromissos, ListaDisciplinas, Cursor) :-
     shell(clear),
@@ -144,9 +149,7 @@ doConfiguracoesScreen(ListaCompromissos, ListaDisciplinas, Cursor, Action) :-
      right(Action), Cursor =:= 0 -> cadastroDisciplinaScreen(ListaCompromissos, ListaDisciplinas);
      right(Action), Cursor =:= 1 -> acessoEdicaoDisciplinasScreen(ListaCompromissos, ListaDisciplinas, 0);
      right(Action), Cursor =:= 2 -> acessoRemocaoDisciplinasScreen(ListaCompromissos, ListaDisciplinas, 0);
-     right(Action), Cursor =:= 3 -> remotionExitAction("Caso deseje limpar o banco de dados pressione (e) (nao tem volta)", Resultado), 
-     (Resultado =:= 1 -> shell(clear), writeln("Sistema resetado com sucesso."), get_single_char(NotUsed), resetSystem;
-      shell(clear), writeln("Sistema nao resetado."), get_single_char(NotUsed), configuracoesScreen(ListaCompromissos, ListaDisciplinas, 0)),
+     right(Action), Cursor =:= 3 -> shell(clear), write("Sistema resetado"), get_single_char(Action), resetSystem;
      right(Action) -> configuracoesScreen(ListaCompromissos, ListaDisciplinas, Cursor);
      configuracoesScreen(ListaCompromissos, ListaDisciplinas, Cursor)).
 
@@ -205,11 +208,15 @@ getValorDesconsiderado([[Nome, Peso, Valor,Considerar]|Ns], Retorno) :-
     (Considerar =:= 0 -> getValorDesconsiderado(Ns, Retorno2), V is Peso*Valor, Retorno = V + Retorno2;
     getValorDesconsiderado(Ns, Retorno2), Retorno = 0 + Retorno2).
 
+round(X,Y,D) :- Z is X * 10^D, round(Z, ZA), Y is ZA / 10^D.
+
 getMediaConsiderada(PesoConsiderado, PesoDesconsiderado, ValorConsiderado, ValorDesconsiderado, MediaConsiderada) :-
-    MediaConsiderada is (ValorConsiderado)/(PesoConsiderado + PesoDesconsiderado).
+    MediaConsiderada1 is (ValorConsiderado)/(PesoConsiderado + PesoDesconsiderado),
+    round(MediaConsiderada1, MediaConsiderada, 2).
 
 getMediaGeral(PesoConsiderado, PesoDesconsiderado, ValorConsiderado, ValorDesconsiderado, MediaGeral) :-
-    MediaGeral is (ValorConsiderado+ValorDesconsiderado)/(PesoConsiderado + PesoDesconsiderado).
+    MediaGeral1 is (ValorConsiderado+ValorDesconsiderado)/(PesoConsiderado + PesoDesconsiderado),
+    round(MediaGeral1, MediaGeral, 2).
 /* funcoes estatisticas --*/
 
 relatorioNotasCompleto(MediaConsiderada) :-
@@ -288,7 +295,7 @@ getNewPesoNota([Nome,Sala,Professor,Notas], CursorY, NewDisciplina) :-
 
 getNewValorNota([Nome,Sala,Professor,Notas], CursorY, NewDisciplina) :-
     nth0(CursorY, Notas, [Nome1, Peso1, Valor1,Considerar1]),
-    getDouble(Input, "Digite o novo valor da nota"),
+    getDouble10(Input, "Digite o novo valor da nota"),
     switch(Notas, [Nome1, Peso1, Input, Considerar1], CursorY, 0, NewNotas),
     NewDisciplina = [Nome,Sala,Professor,NewNotas].
 
@@ -568,4 +575,5 @@ resetSystem :-
 main :-
     readDisciplinas(ListaDisciplinas),
     readCompromissos(ListaCompromissos),
-    mainScreen(ListaCompromissos, ListaDisciplinas, 0).
+    mainScreen(ListaCompromissos, ListaDisciplinas, 0),
+    halt(0).
